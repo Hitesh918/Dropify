@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link href="assets/css/theme.css" rel="stylesheet" />
+    <style>
+                select{
+            width: 16rem;
+        }
+body{margin-top:4rem;}
+    .timeline {
+    border-left: 3px solid #727cf5;
+    border-bottom-right-radius: 4px;
+    border-top-right-radius: 4px;
+    background: rgba(114, 124, 245, 0.09);
+    margin: 0 auto;
+    letter-spacing: 0.2px;
+    position: relative;
+    line-height: 1.4em;
+    font-size: 1.03em;
+    padding: 50px;
+    list-style: none;
+    text-align: left;
+    max-width: 50%;
+}
+
+@media (max-width: 767px) {
+    .timeline {
+        max-width: 98%;
+        padding: 25px;
+    }
+}
+
+.timeline h1 {
+    font-weight: 300;
+    font-size: 1.4em;
+}
+
+.timeline h2,
+.timeline h3 {
+    font-weight: 600;
+    font-size: 1rem;
+    margin-bottom: 10px;
+}
+
+.timeline .event {
+    border-bottom: 1px dashed #e8ebf1;
+    padding-bottom: 25px;
+    margin-bottom: 25px;
+    position: relative;
+}
+
+@media (max-width: 767px) {
+    .timeline .event {
+        padding-top: 30px;
+    }
+}
+
+.timeline .event:last-of-type {
+    padding-bottom: 0;
+    margin-bottom: 0;
+    border: none;
+}
+
+.timeline .event:before,
+.timeline .event:after {
+    position: absolute;
+    display: block;
+    top: 0;
+}
+
+.timeline .event:before {
+    left: -207px;
+    content: attr(data-date);
+    text-align: right;
+    font-weight: 100;
+    font-size: 0.9em;
+    min-width: 120px;
+}
+
+@media (max-width: 767px) {
+    .timeline .event:before {
+        left: 0px;
+        text-align: left;
+    }
+}
+
+.timeline .event:after {
+    -webkit-box-shadow: 0 0 0 3px #727cf5;
+    box-shadow: 0 0 0 3px #727cf5;
+    left: -55.8px;
+    background: #fff;
+    border-radius: 50%;
+    height: 9px;
+    width: 9px;
+    content: "";
+    top: 5px;
+}
+
+@media (max-width: 767px) {
+    .timeline .event:after {
+        left: -31.8px;
+    }
+}
+
+.rtl .timeline {
+    border-left: 0;
+    text-align: right;
+    border-bottom-right-radius: 0;
+    border-top-right-radius: 0;
+    border-bottom-left-radius: 4px;
+    border-top-left-radius: 4px;
+    border-right: 3px solid #727cf5;
+}
+
+.rtl .timeline .event::before {
+    left: 0;
+    right: -170px;
+}
+
+.rtl .timeline .event::after {
+    left: 0;
+    right: -55.8px;
+} 
+label{
+    font-size: 1.3rem;
+    width: 15rem;
+}
+
+.addStop{
+    margin-top: 1.5rem;
+    width: 26rem;
+    background-color: rgb(251, 206, 123);
+    padding: 2rem;
+    display: none;
+}
+select{
+    width: 20rem;
+}
+
+    </style>
+
+</head>
+<body>
+<main>
+
+    <div style="height: 100rem;">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div id="content">
+                                <ul class="timeline">
+                                    <% stops.forEach((obj , idx, array)=>{ %>
+                                        <li class="event" data-date=<%= obj.idealTime %>>
+                                            <h4>
+                                                <%= obj.name %>
+                                            </h4>
+                                            <h3>
+                                                <%= obj.pincode %> <br>
+                                                Time taken from previous stop : <%= obj.timeFromPrev %>Min
+                                            </h3>
+                                            <%  if(!(idx === array.length - 1)){  %>
+                                                <button class="add btn btn-primary sm-2">Add Stop</button>
+                                                <div class="addStop">
+                                                    <form action="/addStop" method="post" >
+                                                        <input type="hidden" name="index" value=<%= idx %>>
+                                                        <label for="">Select stop</label>
+                                                        <select name="stop" >
+                                                            <option value="Select">Select</option>
+                                                            <% places.forEach((obj)=>{ %>
+                                                                <option value=<%=obj.name %> > <%=obj.name %> </option>
+                                                            <%}) %>
+                                                        </select>
+                                                        <br> <br>
+                                                        <label for="">Time from previous stop</label> <br> 
+                                                        <input value="0" name="hrs" style="width: 5rem;" type="number"> Hrs &nbsp &nbsp<input value="0" name="min" style="width: 5rem;" type="number"> Min <br>
+                                                        <input class="btn btn-primary sm-2" style="margin-top: 1.5rem;" type="submit">
+                                                    </form>
+                                                </div>
+                                            <% } %>
+
+
+                                        </li>
+                                    <%})%>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div> 
+    </div>
+    <script>
+        let elem=document.getElementsByClassName("add")
+        let arr=Array.from(elem)
+        arr.forEach(btn => {
+            btn.addEventListener("click" , ()=>{
+                btn.nextElementSibling.style.display="block"
+            })
+        });
+
+    </script>
+
+</main>
+</body>
+</html>

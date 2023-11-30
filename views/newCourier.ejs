@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link href="assets/css/theme.css" rel="stylesheet" />
+    <style>
+        .foundResult{
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22);
+            position: absolute;
+            left: 25%;
+            top: 10%;
+            overflow: hidden;
+            /* width: 678px; */
+            width: 750px;
+            max-width: 100%;
+            min-height: 400px;
+            height: 60%;
+            padding: 40px;
+        }
+        label{
+            font-size: 2rem;
+        }
+        select{
+            font-size: 1.2rem;
+            width: 150px;
+            color: rgb(104, 98, 98);
+        }
+        h1{
+            margin-bottom: 4%;
+        }
+    </style>
+
+</head>
+<body>
+<main>
+
+    <div style="height: 45rem;">
+        
+        <div class="foundResult">
+
+            <h1>Enter the shipment details</h1>
+
+            <form action="/newCourier" method="post">
+
+                <label for="">Source</label> 
+
+                <select name="source" id="1">
+                    <option value="Select">Select</option>
+                    <% sources.forEach((obj)=>{ %>
+                        <option value=<%=obj.place %> > <%=obj.place %> </option>
+                    <%}) %>
+                </select> 
+                &nbsp
+                &nbsp
+                &nbsp
+                &nbsp
+                &nbsp
+                &nbsp
+
+                <label for="">Destination</label>
+
+                <select name="destination" id="2">
+                    <option value="Select">Select</option>
+                </select>
+
+
+                <label for="">Order placed on</label> &nbsp &nbsp
+                <input type="date" name="date" id=""><br>
+                <label for="">Order Time</label> &nbsp &nbsp
+                <input type="time" name="time" id=""> <br> <br> <br>
+                <input class="btn btn-primary me-2" type="submit">
+
+
+
+            </form>
+
+        </div>
+
+    </div>
+
+</main>
+</body>
+</html>

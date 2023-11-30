@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link href="assets/css/theme.css" rel="stylesheet" />
+    <style>
+        .foundResult{
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22);
+            position: absolute;
+            left: 25%;
+            top: 10%;
+            overflow: hidden;
+            /* width: 678px; */
+            width: 750px;
+            max-width: 100%;
+            min-height: 400px;
+            height: 60%;
+            padding: 40px;
+        }
+        label{
+            font-size: 2rem;
+            width: 10rem;
+        }
+        h1{
+            margin-bottom: 12%;
+        }
+        input{
+            width: 20rem;
+        }
+    </style>
+</head>
+<body>
+<main>
+
+    <div style="height: 45rem;">
+        <div class="foundResult">
+            <h1>Enter new stop</h1>
+            <form action="/newStop" method="post">
+                <label for="">Pincode</label>
+                <input name="pincode" type="number"> <br>
+                <label for="">Name</label>
+                <input name="name" type="text">
+
+                <input class="btn btn-primary sm-2" style="width: 12rem; margin-top: 3rem;" type="submit">
+            </form>
+        </div>
+    </div>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link href="assets/css/theme.css" rel="stylesheet" />
+    <style>
+        .foundResult{
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22);
+            position: absolute;
+            left: 25%;
+            top: 8%;
+            overflow: hidden;
+            /* width: 678px; */
+            width: 750px;
+            max-width: 100%;
+            min-height: 400px;
+            height: 80%;
+            padding: 40px;
+        }
+        label{
+            font-size: 2rem;
+            margin-right: 3rem;
+            width: 15rem;
+        }
+        select{
+            width: 50%;
+        }
+
+        h1{
+            margin-bottom: 4%;
+        }
+    </style>
+
+</head>
+<body>
+<main>
+
+    <div style="height: 45rem;">
+        
+        <div class="foundResult">
+
+            <h1>Enter the route details</h1>
+
+            <form action="/newRoute" method="post">
+                <label for="">Route Name</label> 
+                <input name="routeName" style="width: 50%;" type="text">
+                <label for="">Starting Stop</label> 
+                <!-- <input name="start" style="width: 50%;" type="text"> -->
+                <select name="start" >
+                    <option value="Select">Select</option>
+
+                    <% places.forEach((obj)=>{ %>
+                        <option value=<%=obj.name %> > <%=obj.name %> </option>
+                    <%}) %>
+                </select>
+                <br>
+                <label for="">Ending Stop</label>
+                <!-- <input name="end" style="width: 50%;" type="text">  -->
+                <select name="end" >
+                    <option value="Select">Select</option>
+
+                    <% places.forEach((obj)=>{ %>
+                        <option value=<%=obj.name %> > <%=obj.name %> </option>
+                    <%}) %>
+                </select>
+                <br>
+                <label for="">Start Time</label> 
+                <input name="time" type="time" name="time" id="" >
+                <br>
+                <label for="">Journey Length</label> 
+                <input value="0" name="JLhrs" style="width: 5rem;" type="number"> Hrs &nbsp &nbsp<input value="0" name="JLmin" style="width: 5rem;" type="number"> Min
+                <label for="">Return After</label> 
+                <input value="0" name="RAdays" style="width: 5rem;" type="number"> Days <input value="0" name="RAhrs" style="width: 5rem;" type="number"> Hrs
+                <br> <br> <br>
+                <input class="btn btn-primary sm-2" type="submit">
+            </form>
+
+        </div>
+
+    </div>
+
+</main>
+</body>
+</html>
