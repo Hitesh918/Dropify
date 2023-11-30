@@ -5,7 +5,7 @@ const app = express()
 
 
 app.set("view engine", "ejs")
-app.use(express.static("public"))
+app.use(express.static(__dirname + '/public'))
 // app.use(express.json())
 app.use(express.urlencoded({extended: false}))
 
@@ -35,6 +35,15 @@ const routeSchema=new mongoose.Schema({
 
 const Route=mongoose.model("routes" , routeSchema)
 
+const counterSchema=new mongoose.Schema({
+    orderCount:Number ,
+    routeCount:Number , 
+    stopCount:Number
+})
+
+const Counter=new mongoose.model("counters" , counterSchema)
+
+
 app.get("/" , (req,res)=>{
     res.render("index")
 })
@@ -48,35 +57,94 @@ app.get("/newStop", (req,res)=>{
     res.render("newStop")
 })
 
-app.get("/newCourier" , (req,res)=>{
+// app.get("/newCourier" , (req,res)=>{
+
+//     Place.find().then(arr=>{
+//         res.render("newCourier" , {
+//             sources:arr
+//         })
+
+//     })
+//     .catch(err=>{
+//         // console.log(err)
+//     })
 
 
-    Place.find().then(arr=>{
-        res.render("newCourier" , {
-            sources:arr
-        })
+// })
 
+app.get("/allRoutes" ,async (req,res)=>{
+    let arr=await Route.aggregate([{
+        $project: {
+          routeName:1,
+          firstElement: { $arrayElemAt: ["$stops", 0] },
+          lastElement: { $arrayElemAt: ["$stops", -1] }
+        }
+      } ,
+        {
+            $addFields:{
+                source:"$firstElement.pincode",
+                destination:"$lastElement.pincode"
+            }
+        } ,
+    {
+        $project:{
+            firstElement:0 ,
+            lastElement:0 ,
+            _id:0
+        }
+    } ,
+    {
+        $lookup : {
+            from:"stops" , 
+            localField:"source",
+            foreignField:"pincode",
+            as:"src"
+        }
+      
+    } , 
+    {
+        $lookup : {
+            from:"stops" , 
+            localField:"destination",
+            foreignField:"pincode",
+            as:"dest"
+        }
+    } , {
+        $unwind:"$src"
+    } , 
+    {
+        $unwind : "$dest"
+    } ,
+    {
+        $project:{
+            routeName:1,
+            src : "$src.name",
+            dest : "$dest.name"
+        }
+    
+    }
+    ])
+    res.render("allRoutes" , {
+        arr:arr
     })
-    .catch(err=>{
-        // console.log(err)
-    })
-
-
 })
-app.get("/viewRoutes" ,async (req,res)=>{
-    let arr= await Route.aggregate([{$match : {id : 1}} , {$unwind : "$stops"} , {$replaceRoot: { newRoot: "$stops" }} , {$lookup : {from : "stops" , localField : "pincode" , foreignField : "pincode" , as : "placeName" }} , {$unwind : "$placeName"} , {$addFields : {"name":"$placeName.name"}} , {$project: {placeName : 0 , _id:0}}]) 
+
+app.get("/viewRoute/:routeName" ,async (req,res)=>{
+    let routeName=req.params.routeName
+    let arr= await Route.aggregate([{$match : {routeName : routeName}} , {$unwind : "$stops"} , {$replaceRoot: { newRoot: "$stops" }} , {$lookup : {from : "stops" , localField : "pincode" , foreignField : "pincode" , as : "placeName" }} , {$unwind : "$placeName"} , {$addFields : {"name":"$placeName.name"}} , {$project: {placeName : 0 , _id:0}}]) 
     let arr2=await Stop.find()
-    res.render("viewRoutes" , {
+    res.render("viewRoute" , {
         stops:arr,
         places:arr2
     })
 })
-app.post("/newCourier" , (req,res)=>{
-    console.log(req.body)
+
+// app.post("/newCourier" , (req,res)=>{
+//     console.log(req.body)
 
     
-    res.redirect("/admin")
-})
+//     res.redirect("/admin")
+// })
 
 app.get('/newRoute' , (req,res)=>{
     Stop.find().then((arr)=>{
@@ -89,17 +157,27 @@ app.get('/newRoute' , (req,res)=>{
     })
 })
 
-app.post("/newStop" , (req,res)=>{
+app.post("/newStop" ,async (req,res)=>{
     console.log(req.body)
-    let x=new Stop({
-        pincode:req.body.pincode,
-        name:req.body.name,
-        isJunction:false
-    })
-    x.save()
-    res.redirect("/admin")
+    let arr=await Stop.find({pincode : req.body.pincode})
+    let arr2=await Stop.find({name : req.body.name})
+    if(arr.length!=0 || arr2.length!=0){
+        res.send(`<script> alert("stop with same name or pincode already exists") </script>`)
+    }
+    else{
+        let x=new Stop({
+            pincode:req.body.pincode,
+            name:req.body.name,
+            isJunction:false
+        })
+        x.save()
+        await Counter.updateOne({} , {$inc:{stopCount:1}})
+        res.redirect("/admin")
+    }
 
 })
+
+
 app.post('/newRoute' ,async (req,res)=>{
     console.log(req.body)
     if( req.body.start=="Select" || req.body.end=="Select" || !req.body.time || !req.body.routeName){
@@ -109,9 +187,6 @@ app.post('/newRoute' ,async (req,res)=>{
         res.send(`<script> alert("starting and ending point cannot be same") </script>`)
     }
     else{ 
-
-        console.log("drtfyjghkil")
-
         JLhrs=parseInt(req.body.JLhrs)
         JLmin=parseInt(req.body.JLmin)
         RAdays=parseInt(req.body.RAdays)
@@ -132,9 +207,11 @@ app.post('/newRoute' ,async (req,res)=>{
         } 
         let starting =await Stop.findOne({name:req.body.start})
         let ending =await Stop.findOne({name:req.body.end})
+        let count=await Counter.findOne({})
+
         let x=new Route({
-            id:1,
-            routeName:req.body.routeName,
+            id:count.routeCount+1,
+            routeName:req.body.routeName.replace(" " , "-"),
             stops:[{
                 pincode:starting.pincode,
                 idealTime:req.body.time,
@@ -147,6 +224,7 @@ app.post('/newRoute' ,async (req,res)=>{
             returnAfter:RAThrs
         })
         x.save()
+        await Counter.updateOne({} , {$inc:{routeCount:1}})
         res.redirect("/admin")   
     }
 })
