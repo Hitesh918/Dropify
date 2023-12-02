@@ -42,7 +42,13 @@ const counterSchema=new mongoose.Schema({
 })
 
 const Counter=new mongoose.model("counters" , counterSchema)
-
+function addMinutes(time, minsToAdd) {
+    function D(J){ return (J<10? '0':'') + J;};
+    var piece = time.split(':');
+    var mins = piece[0]*60 + +piece[1] + +minsToAdd;
+  
+    return D(mins%(24*60)/60 | 0) + ':' + D(mins%60);  
+} 
 
 app.get("/" , (req,res)=>{
     res.render("index")
@@ -135,7 +141,8 @@ app.get("/viewRoute/:routeName" ,async (req,res)=>{
     let arr2=await Stop.find()
     res.render("viewRoute" , {
         stops:arr,
-        places:arr2
+        places:arr2,
+        routeName:routeName
     })
 })
 
@@ -198,13 +205,7 @@ app.post('/newRoute' ,async (req,res)=>{
             res.send(`<script> alert("invalid journey length") </script>`)
         }
 
-        function addMinutes(time, minsToAdd) {
-            function D(J){ return (J<10? '0':'') + J;};
-            var piece = time.split(':');
-            var mins = piece[0]*60 + +piece[1] + +minsToAdd;
-          
-            return D(mins%(24*60)/60 | 0) + ':' + D(mins%60);  
-        } 
+
         let starting =await Stop.findOne({name:req.body.start})
         let ending =await Stop.findOne({name:req.body.end})
         let count=await Counter.findOne({})
@@ -230,12 +231,52 @@ app.post('/newRoute' ,async (req,res)=>{
 })
 
 
-app.post("/addStop" , (req,res)=>{
-    let Tmin=req.body.hrs*60 + req.body.min
+app.post("/addStop" ,async (req,res)=>{
+    let Tmin=(parseInt(req.body.hrs))*60 + parseInt(req.body.min)
     if(Tmin==0 || req.body.stop=="Select"){
         res.send(`<script> alert("missing details") </script>`)
     }
-    console.log(req.body)
+    let result = await Route.aggregate([{$match : {routeName : req.body.routeName}} , {$unwind : "$stops"} , 
+        {$replaceRoot: { newRoot: "$stops" }} , 
+        {$lookup : {from : "stops" , localField : "pincode" , foreignField : "pincode" , as : "placeName" }} , 
+        {$unwind : "$placeName"} ,
+        {$match:{"placeName.name" : req.body.stop}}
+    ])
+    if(result.length != 0 ){
+        res.send(`<script> alert("selected stop already exists in the route") </script>`)
+    }
+    else{
+
+        let timeObj =await  Route.findOne({routeName : req.body.routeName})
+        let incTime=addMinutes(timeObj.stops[parseInt(req.body.index)].idealTime , Tmin)
+        if(incTime >timeObj.stops[parseInt(req.body.index) +1].idealTime ){
+            res.send(`<script> alert("invalid timings") </script>`)
+        }
+        else{
+            let nameObj=await Stop.findOne({name : req.body.stop})
+
+            await Route.updateOne({routeName : req.body.routeName } , {
+                $push:{
+                    stops:{
+                        $each : [{
+                            pincode:nameObj.pincode,
+                            idealTime: addMinutes(req.body.prevTime , Tmin), 
+                            timeFromPrev: Tmin
+                        }] , 
+                        $position : parseInt(req.body.index) +1
+                    }
+                }
+            })
+            await Route.updateOne({routeName : req.body.routeName } ,{
+                $inc: {
+                    [`stops.${parseInt(req.body.index) + 2}.timeFromPrev`]: -1 * Tmin,
+                }
+            })
+    
+            res.redirect(`/viewRoute/${req.body.routeName}`)
+        }
+
+    }
 })
 
 app.listen(3000);
