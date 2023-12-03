@@ -42,13 +42,42 @@ const counterSchema=new mongoose.Schema({
 })
 
 const Counter=new mongoose.model("counters" , counterSchema)
+
+const linkSchema = new mongoose.Schema({
+    id:Number ,
+    links:[Number]
+})
+
+const Link =new mongoose.model("links" , linkSchema)
+
 function addMinutes(time, minsToAdd) {
     function D(J){ return (J<10? '0':'') + J;};
     var piece = time.split(':');
     var mins = piece[0]*60 + +piece[1] + +minsToAdd;
-  
     return D(mins%(24*60)/60 | 0) + ':' + D(mins%60);  
 } 
+
+async function junctionFinder(stopCode , lhs){
+    let flag=true
+    await Route.find({}).then(async (arr)=>{
+        arr.forEach(async (route) =>{
+            route.stops.forEach(async (stop)=>{
+                if(stop.pincode == stopCode){
+                    if(flag){
+                        await Stop.findOneAndUpdate({pincode : stopCode} , {isJunction  : true})
+                        flag=false
+                    }
+                    await Link.findOneAndUpdate({id:lhs} , {
+                        $addToSet:{links: route.id}
+                    })
+                    await Link.findOneAndUpdate({id:route.id} , {
+                        $addToSet:{links: lhs}
+                    })
+                }
+            })
+        })
+    })
+}
 
 app.get("/" , (req,res)=>{
     res.render("index")
@@ -148,8 +177,6 @@ app.get("/viewRoute/:routeName" ,async (req,res)=>{
 
 // app.post("/newCourier" , (req,res)=>{
 //     console.log(req.body)
-
-    
 //     res.redirect("/admin")
 // })
 
@@ -184,7 +211,6 @@ app.post("/newStop" ,async (req,res)=>{
 
 })
 
-
 app.post('/newRoute' ,async (req,res)=>{
     console.log(req.body)
     if( req.body.start=="Select" || req.body.end=="Select" || !req.body.time || !req.body.routeName){
@@ -205,10 +231,20 @@ app.post('/newRoute' ,async (req,res)=>{
             res.send(`<script> alert("invalid journey length") </script>`)
         }
 
-
         let starting =await Stop.findOne({name:req.body.start})
         let ending =await Stop.findOne({name:req.body.end})
         let count=await Counter.findOne({})
+
+
+        let j=new Link({
+            id:count.routeCount+1,
+            links:[]
+        })
+        await j.save()
+
+        await junctionFinder(starting.pincode ,count.routeCount+1 )
+        await junctionFinder(ending.pincode , count.routeCount+1)
+
 
         let x=new Route({
             id:count.routeCount+1,
@@ -224,8 +260,9 @@ app.post('/newRoute' ,async (req,res)=>{
             }],
             returnAfter:RAThrs
         })
-        x.save()
+        await x.save()
         await Counter.updateOne({} , {$inc:{routeCount:1}})
+
         res.redirect("/admin")   
     }
 })
@@ -242,18 +279,20 @@ app.post("/addStop" ,async (req,res)=>{
         {$unwind : "$placeName"} ,
         {$match:{"placeName.name" : req.body.stop}}
     ])
+    let timeObj =await  Route.findOne({routeName : req.body.routeName})
     if(result.length != 0 ){
         res.send(`<script> alert("selected stop already exists in the route") </script>`)
     }
     else{
 
-        let timeObj =await  Route.findOne({routeName : req.body.routeName})
         let incTime=addMinutes(timeObj.stops[parseInt(req.body.index)].idealTime , Tmin)
         if(incTime >timeObj.stops[parseInt(req.body.index) +1].idealTime ){
             res.send(`<script> alert("invalid timings") </script>`)
         }
         else{
             let nameObj=await Stop.findOne({name : req.body.stop})
+
+            await junctionFinder(nameObj.pincode , timeObj.id)
 
             await Route.updateOne({routeName : req.body.routeName } , {
                 $push:{
