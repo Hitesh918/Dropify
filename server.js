@@ -30,7 +30,8 @@ const routeSchema=new mongoose.Schema({
     idealTime:String,
     timeFromPrev:Number,
     }],
-    returnAfter:Number
+    returnAfter:Number,
+    onEvery:String
 })
 
 const Route=mongoose.model("routes" , routeSchema)
@@ -213,7 +214,7 @@ app.post("/newStop" ,async (req,res)=>{
 
 app.post('/newRoute' ,async (req,res)=>{
     console.log(req.body)
-    if( req.body.start=="Select" || req.body.end=="Select" || !req.body.time || !req.body.routeName){
+    if( req.body.start=="Select" || req.body.end=="Select" || !req.body.time || !req.body.routeName || req.body.onEvery=="Select"){
         res.send(`<script> alert("missing details") </script>`)
     }
     else if(req.body.start==req.body.end){
@@ -231,39 +232,49 @@ app.post('/newRoute' ,async (req,res)=>{
             res.send(`<script> alert("invalid journey length") </script>`)
         }
 
-        let starting =await Stop.findOne({name:req.body.start})
-        let ending =await Stop.findOne({name:req.body.end})
-        let count=await Counter.findOne({})
+        let routeNames=await Route.find({routeName:req.body.routeName.replace(" " , "-")})
+        console.log(routeNames.length)
+        if(routeNames.length != 0){
+            res.send(`<script> alert("route with given name already exists") </script>`)
+        }
+        else{
+            let starting =await Stop.findOne({name:req.body.start})
+            let ending =await Stop.findOne({name:req.body.end})
+            let count=await Counter.findOne({})
+    
+    
+            let j=new Link({
+                id:count.routeCount+1,
+                links:[]
+            })
+            await j.save()
+    
+            await junctionFinder(starting.pincode ,count.routeCount+1 )
+            await junctionFinder(ending.pincode , count.routeCount+1)
+    
+    
+            let x=new Route({
+                id:count.routeCount+1,
+                routeName:req.body.routeName.replace(" " , "-"),
+                stops:[{
+                    pincode:starting.pincode,
+                    idealTime:req.body.time,
+                    timeFromPrev:null
+                },{
+                    pincode:ending.pincode,
+                    idealTime:addMinutes(req.body.time , JLTmin) , 
+                    timeFromPrev:JLTmin
+                }],
+                returnAfter:RAThrs,
+                onEvery:req.body.onEvery
+            })
+            await x.save()
+            await Counter.updateOne({} , {$inc:{routeCount:1}})
+    
+            res.redirect("/admin")   
+        }
 
-
-        let j=new Link({
-            id:count.routeCount+1,
-            links:[]
-        })
-        await j.save()
-
-        await junctionFinder(starting.pincode ,count.routeCount+1 )
-        await junctionFinder(ending.pincode , count.routeCount+1)
-
-
-        let x=new Route({
-            id:count.routeCount+1,
-            routeName:req.body.routeName.replace(" " , "-"),
-            stops:[{
-                pincode:starting.pincode,
-                idealTime:req.body.time,
-                timeFromPrev:null
-            },{
-                pincode:ending.pincode,
-                idealTime:addMinutes(req.body.time , JLTmin) , 
-                timeFromPrev:JLTmin
-            }],
-            returnAfter:RAThrs
-        })
-        await x.save()
-        await Counter.updateOne({} , {$inc:{routeCount:1}})
-
-        res.redirect("/admin")   
+        
     }
 })
 
@@ -285,8 +296,12 @@ app.post("/addStop" ,async (req,res)=>{
     }
     else{
 
-        let incTime=addMinutes(timeObj.stops[parseInt(req.body.index)].idealTime , Tmin)
-        if(incTime >timeObj.stops[parseInt(req.body.index) +1].idealTime ){
+        // let incTime=addMinutes(timeObj.stops[parseInt(req.body.index)].idealTime , Tmin)
+        // if(incTime >timeObj.stops[parseInt(req.body.index) +1].idealTime ){
+        //     res.send(`<script> alert("invalid timings") </script>`)
+        // }
+        let incTime=timeObj.stops[parseInt(req.body.index +1)].timeFromPrev
+        if(Tmin >= incTime){
             res.send(`<script> alert("invalid timings") </script>`)
         }
         else{
