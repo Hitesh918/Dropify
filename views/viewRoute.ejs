@@ -162,7 +162,8 @@ select{
                                             </h4>
                                             <h3>
                                                 <%= obj.pincode %> <br>
-                                                Time taken from previous stop : <%= obj.timeFromPrev %>Min
+                                                Time taken from previous stop : <%= obj.timeFromPrev %>Min <br>
+                                                Returning At: <%= obj.idealReturnTime %>
                                             </h3>
                                             <%  if(!(idx === array.length - 1)){  %>
                                                 <button class="add btn btn-primary sm-2">Add Stop</button>

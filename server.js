@@ -28,10 +28,11 @@ const routeSchema=new mongoose.Schema({
     stops:[{
     pincode : Number , 
     idealTime:String,
+    idealReturnTime : String,
     timeFromPrev:Number,
     }],
     returnAfter:Number,
-    onEvery:String
+    onEvery:Number
 })
 
 const Route=mongoose.model("routes" , routeSchema)
@@ -46,7 +47,10 @@ const Counter=new mongoose.model("counters" , counterSchema)
 
 const linkSchema = new mongoose.Schema({
     id:Number ,
-    links:[Number]
+    links:[{
+        outId:Number , 
+        pincode:Number
+    }]
 })
 
 const Link =new mongoose.model("links" , linkSchema)
@@ -69,10 +73,16 @@ async function junctionFinder(stopCode , lhs){
                         flag=false
                     }
                     await Link.findOneAndUpdate({id:lhs} , {
-                        $addToSet:{links: route.id}
+                        $addToSet:{links: {
+                            outId:route.id , 
+                            pincode : stop.pincode
+                        }}
                     })
                     await Link.findOneAndUpdate({id:route.id} , {
-                        $addToSet:{links: lhs}
+                        $addToSet:{links: {
+                            outId:lhs , 
+                            pincode:stop.pincode
+                        }} 
                     })
                 }
             })
@@ -259,14 +269,16 @@ app.post('/newRoute' ,async (req,res)=>{
                 stops:[{
                     pincode:starting.pincode,
                     idealTime:req.body.time,
+                    idealReturnTime:addMinutes(req.body.time , (2*JLTmin)+(RAThrs*60)) , 
                     timeFromPrev:null
                 },{
                     pincode:ending.pincode,
-                    idealTime:addMinutes(req.body.time , JLTmin) , 
+                    idealTime:addMinutes(req.body.time , JLTmin) ,
+                    idealReturnTime:addMinutes(req.body.time , JLTmin+(RAThrs*60)) , 
                     timeFromPrev:JLTmin
                 }],
                 returnAfter:RAThrs,
-                onEvery:req.body.onEvery
+                onEvery:parseInt(req.body.onEvery)
             })
             await x.save()
             await Counter.updateOne({} , {$inc:{routeCount:1}})
@@ -300,8 +312,9 @@ app.post("/addStop" ,async (req,res)=>{
         // if(incTime >timeObj.stops[parseInt(req.body.index) +1].idealTime ){
         //     res.send(`<script> alert("invalid timings") </script>`)
         // }
-        let incTime=timeObj.stops[parseInt(req.body.index +1)].timeFromPrev
+        let incTime=timeObj.stops[parseInt(req.body.index)+1].timeFromPrev
         if(Tmin >= incTime){
+            
             res.send(`<script> alert("invalid timings") </script>`)
         }
         else{
@@ -309,12 +322,15 @@ app.post("/addStop" ,async (req,res)=>{
 
             await junctionFinder(nameObj.pincode , timeObj.id)
 
+            let nextTime=timeObj.stops[parseInt(req.body.index)+1].idealReturnTime
+
             await Route.updateOne({routeName : req.body.routeName } , {
                 $push:{
                     stops:{
                         $each : [{
                             pincode:nameObj.pincode,
                             idealTime: addMinutes(req.body.prevTime , Tmin), 
+                            idealReturnTime:addMinutes(nextTime , (incTime)-(Tmin)) , 
                             timeFromPrev: Tmin
                         }] , 
                         $position : parseInt(req.body.index) +1
