@@ -35,21 +35,26 @@ const counterSchema=new mongoose.Schema({
 
 const Counter=new mongoose.model("counters" , counterSchema)
 
-async function junctionFinder(stopCode){
-    await Route.find({}).then(async (arr)=>{
-        arr.forEach(async (route) =>{
-            route.stops.forEach(async (stop)=>{
-                if(stop.pincode == stopCode){
-                    await Stop.findOneAndUpdate({pincode : stopCode} , {isJunction  : true})
-                    return 
-                }
-            })
 
-        })
-    })
-}
+Route.aggregate([{$match : {routeName : "zxcv"}} , {$unwind : "$stops"} , {$replaceRoot: { newRoot: "$stops" }} , {$lookup : {from : "stops" , localField : "pincode" , foreignField : "pincode" , as : "placeName" }} , {$unwind : "$placeName"} , {$addFields : {"name":"$placeName.name"}} , {$project: {placeName : 0 , _id:0}}]).then(arr =>{
+    console.log(arr)
 
-junctionFinder(500000)
+})
+// async function junctionFinder(stopCode){
+//     await Route.find({}).then(async (arr)=>{
+//         arr.forEach(async (route) =>{
+//             route.stops.forEach(async (stop)=>{
+//                 if(stop.pincode == stopCode){
+//                     await Stop.findOneAndUpdate({pincode : stopCode} , {isJunction  : true})
+//                     return 
+//                 }
+//             })
+
+//         })
+//     })
+// }
+
+// junctionFinder(500000)
 
 // Route.aggregate([{$match : {id : 2}} , 
 //     {$unwind : "$stops"} , 

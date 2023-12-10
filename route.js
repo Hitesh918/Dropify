@@ -28,10 +28,12 @@ const routeSchema=new mongoose.Schema({
     pincode : Number , 
     idealTime:String,
     idealReturnTime : String,
+    onDay:Number , 
+    returnDay:Number,
     timeFromPrev:Number,
     }],
     returnAfter:Number,
-    onEvery:String
+    onEvery:Number
 })
 
 const Route=mongoose.model("routes" , routeSchema)
@@ -52,8 +54,8 @@ const linkSchema = new mongoose.Schema({
     }]
 })
 
-
 const Link =new mongoose.model("links" , linkSchema)
+
 
 
 let src=500007
@@ -69,7 +71,6 @@ async function findAllRoutes(graph, sourceId, destinationId, visited = new Set()
   currentPath.push(sourceId);
 
   if (sourceId === destinationId) {
-    // Found a route
     // console.log(currentPath);
     possiblities.push(currentPath)
     console.log(currentPath)
@@ -88,6 +89,7 @@ async function findAllRoutes(graph, sourceId, destinationId, visited = new Set()
 
 
 function minutesUntilDesiredTime(desiredTime, dayNumber ,startTime) {
+    // console.log("called func " , desiredTime , dayNumber , startTime )
     // const currentDateTime = new Date();
     const currentDateTime = new Date(startTime);
     // const currentDateTime = new Date(2023 , 11 , 7 , 12 , 0);
@@ -119,6 +121,7 @@ function minutesUntilDesiredTime(desiredTime, dayNumber ,startTime) {
 
 async function idk(srcCode , destCode , arr){
     let ans = new Date(Date.UTC(2023, 11, 7, 12, 0));
+
     for(let i=0 ; i<arr.length - 1 ; i++){
         let presentRoute=await Route.findOne({id:arr[i]})
         let obj=await Link.findOne({id  :arr[i]})
@@ -134,19 +137,22 @@ async function idk(srcCode , destCode , arr){
             return ob.pincode == tempGoal
         })
         if(courierIndex < junctionIndex){
-            ans.setUTCMinutes(ans.getUTCMinutes() + minutesUntilDesiredTime(presentRoute.stops[courierIndex].idealTime , presentRoute.onEvery , ans))
+            ans.setUTCMinutes(ans.getUTCMinutes() + minutesUntilDesiredTime(presentRoute.stops[courierIndex].idealTime , presentRoute.stops[courierIndex].onDay , ans))
+            // console.log(ans)
+
             for(let i=courierIndex+1 ; i<=junctionIndex ; i++){
                 // time += presentRoute.stops[i].timeFromPrev
                 ans.setUTCMinutes(ans.getUTCMinutes() + presentRoute.stops[i].timeFromPrev)
             }
         }
         else if(courierIndex > junctionIndex){
-            ans.setUTCMinutes(ans.getUTCMinutes() + minutesUntilDesiredTime(presentRoute.stops[courierIndex].idealReturnTime , presentRoute.onEvery , ans))
+            ans.setUTCMinutes(ans.getUTCMinutes() + minutesUntilDesiredTime(presentRoute.stops[courierIndex].idealReturnTime , presentRoute.stops[courierIndex].returnDay , ans))
             for(let i=courierIndex ; i>=junctionIndex+1 ; i--){
                 ans.setUTCMinutes(ans.getUTCMinutes() + presentRoute.stops[i].timeFromPrev)
             }
         }
         srcCode = tempGoal
+
    }
    let presentRoute=await Route.findOne({id:arr[arr.length -1 ]})
    let srcIndex=presentRoute.stops.findIndex((ob)=>{
@@ -157,13 +163,13 @@ async function idk(srcCode , destCode , arr){
    })
 
    if(srcIndex < destIndex){
-    ans.setUTCMinutes(ans.getUTCMinutes() + minutesUntilDesiredTime(presentRoute.stops[srcIndex].idealTime , presentRoute.onEvery , ans))
+    ans.setUTCMinutes(ans.getUTCMinutes() + minutesUntilDesiredTime(presentRoute.stops[srcIndex].idealTime , presentRoute.stops[srcIndex].onDay , ans))
     for(let i=srcIndex+1 ; i<=destIndex ; i++){
         ans.setUTCMinutes(ans.getUTCMinutes() + presentRoute.stops[i].timeFromPrev)
     }
    }
    else if(srcIndex > destIndex){
-    ans.setUTCMinutes(ans.getUTCMinutes() + minutesUntilDesiredTime(presentRoute.stops[srcIndex].idealReturnTime , presentRoute.onEvery , ans))
+    ans.setUTCMinutes(ans.getUTCMinutes() + minutesUntilDesiredTime(presentRoute.stops[srcIndex].idealReturnTime , presentRoute.stops[srcIndex].returnDay , ans))
     for(let i=srcIndex ; i>=destIndex+1 ; i--){
         ans.setUTCMinutes(ans.getUTCMinutes() + presentRoute.stops[i].timeFromPrev)
     }
@@ -199,3 +205,4 @@ async function idk(srcCode , destCode , arr){
         })
 
      })
+

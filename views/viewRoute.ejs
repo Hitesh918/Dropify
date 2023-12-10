@@ -172,11 +172,12 @@ select{
                                                         <input type="hidden" name="routeName" value=<%= routeName %> >
                                                         <input type="hidden" name="index" value=<%= idx %>>
                                                         <input type="hidden" name="prevTime" value=<%= obj.idealTime  %>>
+                                                        <input type="hidden" name="prevOnDay" value=<%= obj.onDay  %>>
                                                         <label for="">Select stop</label>
                                                         <select name="stop" >
                                                             <option value="Select">Select</option>
-                                                            <% places.forEach((obj)=>{ %>
-                                                                <option value=<%=obj.name %> > <%=obj.name %> </option>
+                                                            <% places.forEach((ob)=>{ %>
+                                                                <option value=<%=ob.pincode %> > <%=ob.name %> </option>
                                                             <%}) %>
                                                         </select>
                                                         <br> <br>

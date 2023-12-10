@@ -29,6 +29,8 @@ const routeSchema=new mongoose.Schema({
     pincode : Number , 
     idealTime:String,
     idealReturnTime : String,
+    onDay:Number , 
+    returnDay:Number,
     timeFromPrev:Number,
     }],
     returnAfter:Number,
@@ -61,6 +63,12 @@ function addMinutes(time, minsToAdd) {
     var mins = piece[0]*60 + +piece[1] + +minsToAdd;
     return D(mins%(24*60)/60 | 0) + ':' + D(mins%60);  
 } 
+function dayCalc( timeString , startDay ,  minutesToAdd){
+    let arr=timeString.split(":")
+    let dt = new Date(Date.UTC(2018, 3, startDay +1, arr[0], arr[1]));
+    dt.setUTCMinutes(dt.getUTCMinutes() + minutesToAdd)
+    return dt.getUTCDay()
+}
 
 async function junctionFinder(stopCode , lhs){
     let flag=true
@@ -248,8 +256,8 @@ app.post('/newRoute' ,async (req,res)=>{
             res.send(`<script> alert("route with given name already exists") </script>`)
         }
         else{
-            let starting =await Stop.findOne({name:req.body.start})
-            let ending =await Stop.findOne({name:req.body.end})
+            let starting =parseInt(req.body.start)
+            let ending =parseInt(req.body.end)
             let count=await Counter.findOne({})
     
     
@@ -259,23 +267,28 @@ app.post('/newRoute' ,async (req,res)=>{
             })
             await j.save()
     
-            await junctionFinder(starting.pincode ,count.routeCount+1 )
-            await junctionFinder(ending.pincode , count.routeCount+1)
+            await junctionFinder(starting ,count.routeCount+1 )
+            await junctionFinder(ending , count.routeCount+1)
     
     
             let x=new Route({
                 id:count.routeCount+1,
                 routeName:req.body.routeName.replace(" " , "-"),
                 stops:[{
-                    pincode:starting.pincode,
+                    pincode:starting,
                     idealTime:req.body.time,
                     idealReturnTime:addMinutes(req.body.time , (2*JLTmin)+(RAThrs*60)) , 
-                    timeFromPrev:null
+                    onDay:parseInt(req.body.onEvery),
+                    returnDay : dayCalc(req.body.time , parseInt(req.body.onEvery) , (2*JLTmin)+(RAThrs*60)),
+                    timeFromPrev:null,
+
                 },{
-                    pincode:ending.pincode,
+                    pincode:ending,
                     idealTime:addMinutes(req.body.time , JLTmin) ,
                     idealReturnTime:addMinutes(req.body.time , JLTmin+(RAThrs*60)) , 
-                    timeFromPrev:JLTmin
+                    onDay :dayCalc(req.body.time , parseInt(req.body.onEvery) , JLTmin) ,
+                    returnDay : dayCalc(req.body.time , parseInt(req.body.onEvery) , JLTmin+(RAThrs*60)),
+                    timeFromPrev:JLTmin,
                 }],
                 returnAfter:RAThrs,
                 onEvery:parseInt(req.body.onEvery)
@@ -292,16 +305,16 @@ app.post('/newRoute' ,async (req,res)=>{
 
 
 app.post("/addStop" ,async (req,res)=>{
+    console.log(req.body)
     let Tmin=(parseInt(req.body.hrs))*60 + parseInt(req.body.min)
     if(Tmin==0 || req.body.stop=="Select"){
         res.send(`<script> alert("missing details") </script>`)
     }
     let result = await Route.aggregate([{$match : {routeName : req.body.routeName}} , {$unwind : "$stops"} , 
         {$replaceRoot: { newRoot: "$stops" }} , 
-        {$lookup : {from : "stops" , localField : "pincode" , foreignField : "pincode" , as : "placeName" }} , 
-        {$unwind : "$placeName"} ,
-        {$match:{"placeName.name" : req.body.stop}}
+        {$match:{pincode : parseInt(req.body.stop)}}
     ])
+    console.log(result)
     let timeObj =await  Route.findOne({routeName : req.body.routeName})
     if(result.length != 0 ){
         res.send(`<script> alert("selected stop already exists in the route") </script>`)
@@ -318,20 +331,23 @@ app.post("/addStop" ,async (req,res)=>{
             res.send(`<script> alert("invalid timings") </script>`)
         }
         else{
-            let nameObj=await Stop.findOne({name : req.body.stop})
+            let nameObj=parseInt(req.body.stop)
 
-            await junctionFinder(nameObj.pincode , timeObj.id)
+            await junctionFinder(nameObj , timeObj.id)
 
             let nextTime=timeObj.stops[parseInt(req.body.index)+1].idealReturnTime
+            let nextOnDay=timeObj.stops[parseInt(req.body.index)+1].returnDay
 
             await Route.updateOne({routeName : req.body.routeName } , {
                 $push:{
                     stops:{
                         $each : [{
-                            pincode:nameObj.pincode,
+                            pincode:nameObj,
                             idealTime: addMinutes(req.body.prevTime , Tmin), 
                             idealReturnTime:addMinutes(nextTime , (incTime)-(Tmin)) , 
-                            timeFromPrev: Tmin
+                            onDay: dayCalc(req.body.prevTime , parseInt(req.body.prevOnDay) ,Tmin) , 
+                            returnDay : dayCalc(nextTime , nextOnDay , (incTime)-(Tmin)),
+                            timeFromPrev: Tmin , 
                         }] , 
                         $position : parseInt(req.body.index) +1
                     }
