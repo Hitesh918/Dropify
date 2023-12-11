@@ -17,20 +17,23 @@
             /* width: 678px; */
             width: 750px;
             max-width: 100%;
-            min-height: 400px;
-            height: 60%;
+            height: 50%;
             padding: 40px;
         }
         label{
             font-size: 2rem;
+            margin-right: 3rem;
+            width: 15rem;
         }
         select{
-            font-size: 1.2rem;
-            width: 150px;
-            color: rgb(104, 98, 98);
+            width: 50%;
         }
+
         h1{
             margin-bottom: 4%;
+        }
+        .btn{
+            margin-top: 7%;
         }
     </style>
 
@@ -48,33 +51,23 @@
 
                 <label for="">Source</label> 
 
-                <select name="source" id="1">
+                <select name="source" >
                     <option value="Select">Select</option>
-                    <% sources.forEach((obj)=>{ %>
-                        <option value=<%=obj.place %> > <%=obj.place %> </option>
+                    <% stops.forEach((obj)=>{ %>
+                        <option value=<%=obj.pincode %> > <%=obj.name %> </option>
                     <%}) %>
                 </select> 
-                &nbsp
-                &nbsp
-                &nbsp
-                &nbsp
-                &nbsp
-                &nbsp
 
                 <label for="">Destination</label>
 
-                <select name="destination" id="2">
+                <select name="destination" >
                     <option value="Select">Select</option>
+                    <% stops.forEach((obj)=>{ %>
+                        <option value=<%=obj.pincode %> > <%=obj.name %> </option>
+                    <%}) %>
                 </select>
 
-
-                <label for="">Order placed on</label> &nbsp &nbsp
-                <input type="date" name="date" id=""><br>
-                <label for="">Order Time</label> &nbsp &nbsp
-                <input type="time" name="time" id=""> <br> <br> <br>
                 <input class="btn btn-primary me-2" type="submit">
-
-
 
             </form>
 
