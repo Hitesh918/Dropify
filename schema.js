@@ -52,6 +52,19 @@ const orderSchema = new mongoose.Schema({
 
 const Order = new mongoose.model("orders" , orderSchema)
 
+const pathSchema = new mongoose.Schema({
+    courierId  :Number , 
+    path : [
+        {
+            pincode : Number,
+            time : Date ,
+            waiting : Boolean
+        }
+    ]
+})
+
+const Info = new mongoose.model("details" , pathSchema )
+
 
 module.exports = {
     Stop,
@@ -59,4 +72,5 @@ module.exports = {
     Counter,
     Link,
     Order,
+    Info
 };

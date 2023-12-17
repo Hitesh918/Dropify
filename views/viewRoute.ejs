@@ -1,215 +1,260 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <base href="/">
     <title>Document</title>
     <link href="assets/css/theme.css" rel="stylesheet" />
+    <script src="https://kit.fontawesome.com/1611841c1c.js" crossorigin="anonymous"></script>
+
     <style>
-                select{
+        select {
             width: 16rem;
         }
-body{margin-top:4rem;}
-    .timeline {
-    border-left: 3px solid #727cf5;
-    border-bottom-right-radius: 4px;
-    border-top-right-radius: 4px;
-    background: rgba(114, 124, 245, 0.09);
-    margin: 0 auto;
-    letter-spacing: 0.2px;
-    position: relative;
-    line-height: 1.4em;
-    font-size: 1.03em;
-    padding: 50px;
-    list-style: none;
-    text-align: left;
-    max-width: 50%;
-}
 
-@media (max-width: 767px) {
-    .timeline {
-        max-width: 98%;
-        padding: 25px;
-    }
-}
+        body {
+            margin-top: 4rem;
+        }
 
-.timeline h1 {
-    font-weight: 300;
-    font-size: 1.4em;
-}
+        .timeline {
+            border-left: 3px solid #727cf5;
+            border-bottom-right-radius: 4px;
+            border-top-right-radius: 4px;
+            background: rgba(114, 124, 245, 0.09);
+            margin: 0 auto;
+            letter-spacing: 0.2px;
+            position: relative;
+            line-height: 1.4em;
+            font-size: 1.03em;
+            padding: 50px;
+            list-style: none;
+            text-align: left;
+            max-width: 50%;
+        }
 
-.timeline h2,
-.timeline h3 {
-    font-weight: 600;
-    font-size: 1rem;
-    margin-bottom: 10px;
-}
+        @media (max-width: 767px) {
+            .timeline {
+                max-width: 98%;
+                padding: 25px;
+            }
+        }
 
-.timeline .event {
-    border-bottom: 1px dashed #e8ebf1;
-    padding-bottom: 25px;
-    margin-bottom: 25px;
-    position: relative;
-}
+        .timeline h1 {
+            font-weight: 300;
+            font-size: 1.4em;
+        }
 
-@media (max-width: 767px) {
-    .timeline .event {
-        padding-top: 30px;
-    }
-}
+        .timeline h2,
+        .timeline h3 {
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 10px;
+        }
 
-.timeline .event:last-of-type {
-    padding-bottom: 0;
-    margin-bottom: 0;
-    border: none;
-}
+        .timeline .event {
+            border-bottom: 1px dashed #e8ebf1;
+            padding-bottom: 25px;
+            margin-bottom: 25px;
+            position: relative;
+        }
 
-.timeline .event:before,
-.timeline .event:after {
-    position: absolute;
-    display: block;
-    top: 0;
-}
+        @media (max-width: 767px) {
+            .timeline .event {
+                padding-top: 30px;
+            }
+        }
 
-.timeline .event:before {
-    left: -207px;
-    content: attr(data-date);
-    text-align: right;
-    font-weight: 100;
-    font-size: 0.9em;
-    min-width: 120px;
-}
+        .timeline .event:last-of-type {
+            padding-bottom: 0;
+            margin-bottom: 0;
+            border: none;
+        }
 
-@media (max-width: 767px) {
-    .timeline .event:before {
-        left: 0px;
-        text-align: left;
-    }
-}
+        .timeline .event:before,
+        .timeline .event:after {
+            position: absolute;
+            display: block;
+            top: 0;
+        }
 
-.timeline .event:after {
-    -webkit-box-shadow: 0 0 0 3px #727cf5;
-    box-shadow: 0 0 0 3px #727cf5;
-    left: -55.8px;
-    background: #fff;
-    border-radius: 50%;
-    height: 9px;
-    width: 9px;
-    content: "";
-    top: 5px;
-}
+        .timeline .event:before {
+            left: -207px;
+            content: attr(data-date);
+            text-align: right;
+            font-weight: 100;
+            font-size: 0.9em;
+            min-width: 120px;
+        }
 
-@media (max-width: 767px) {
-    .timeline .event:after {
-        left: -31.8px;
-    }
-}
+        @media (max-width: 767px) {
+            .timeline .event:before {
+                left: 0px;
+                text-align: left;
+            }
+        }
 
-.rtl .timeline {
-    border-left: 0;
-    text-align: right;
-    border-bottom-right-radius: 0;
-    border-top-right-radius: 0;
-    border-bottom-left-radius: 4px;
-    border-top-left-radius: 4px;
-    border-right: 3px solid #727cf5;
-}
+        .timeline .event:after {
+            -webkit-box-shadow: 0 0 0 3px #727cf5;
+            box-shadow: 0 0 0 3px #727cf5;
+            left: -55.8px;
+            background: #fff;
+            border-radius: 50%;
+            height: 9px;
+            width: 9px;
+            content: "";
+            top: 5px;
+        }
 
-.rtl .timeline .event::before {
-    left: 0;
-    right: -170px;
-}
+        @media (max-width: 767px) {
+            .timeline .event:after {
+                left: -31.8px;
+            }
+        }
 
-.rtl .timeline .event::after {
-    left: 0;
-    right: -55.8px;
-} 
-label{
-    font-size: 1.3rem;
-    width: 15rem;
-}
+        .rtl .timeline {
+            border-left: 0;
+            text-align: right;
+            border-bottom-right-radius: 0;
+            border-top-right-radius: 0;
+            border-bottom-left-radius: 4px;
+            border-top-left-radius: 4px;
+            border-right: 3px solid #727cf5;
+        }
 
-.addStop{
-    margin-top: 1.5rem;
-    width: 26rem;
-    background-color: rgb(251, 206, 123);
-    padding: 2rem;
-    display: none;
-}
-select{
-    width: 20rem;
-}
+        .rtl .timeline .event::before {
+            left: 0;
+            right: -170px;
+        }
+
+        .rtl .timeline .event::after {
+            left: 0;
+            right: -55.8px;
+        }
+
+        label {
+            font-size: 1.3rem;
+            width: 15rem;
+        }
+
+        .addStop {
+            margin-top: 1.5rem;
+            width: 26rem;
+            background-color: rgb(251, 206, 123);
+            padding: 2rem;
+            display: none;
+        }
+
+        select {
+            width: 20rem;
+        }
+
+        i{
+            font-size: 1.5rem;
+        }
+        .deleteForm{
+            margin-top: 2rem;
+            position: relative;
+            left: 30rem;
+        }
+        .removeStop{
+            display: inline-block;
+        }
 
     </style>
 
 </head>
+
 <body>
-<main>
+    <main>
 
-    <div style="height: 100rem;">
-        <div class="container">
-            <div class="row">
-                <div class="col-md-12">
-                    <div class="card">
-                        <div class="card-body">
-                            <div id="content">
-                                <ul class="timeline">
-                                    <% stops.forEach((obj , idx, array)=>{ %>
-                                        <li class="event" data-date=<%= obj.idealTime %>>
-                                            <h4>
-                                                <%= obj.name %>
-                                            </h4>
-                                            <h3>
-                                                <%= obj.pincode %> <br>
-                                                Time taken from previous stop : <%= obj.timeFromPrev %>Min <br>
-                                                Returning At: <%= obj.idealReturnTime %>
-                                            </h3>
-                                            <%  if(!(idx === array.length - 1)){  %>
-                                                <button class="add btn btn-primary sm-2">Add Stop</button>
-                                                <div class="addStop">
-                                                    <form action="/addStop" method="post" >
-                                                        <input type="hidden" name="routeName" value=<%= routeName %> >
-                                                        <input type="hidden" name="index" value=<%= idx %>>
-                                                        <input type="hidden" name="prevTime" value=<%= obj.idealTime  %>>
-                                                        <input type="hidden" name="prevOnDay" value=<%= obj.onDay  %>>
-                                                        <label for="">Select stop</label>
-                                                        <select name="stop" >
-                                                            <option value="Select">Select</option>
-                                                            <% places.forEach((ob)=>{ %>
-                                                                <option value=<%=ob.pincode %> > <%=ob.name %> </option>
-                                                            <%}) %>
-                                                        </select>
-                                                        <br> <br>
-                                                        <label for="">Time from previous stop</label> <br> 
-                                                        <input value="0" name="hrs" style="width: 5rem;" type="number"> Hrs &nbsp &nbsp<input value="0" name="min" style="width: 5rem;" type="number"> Min <br>
-                                                        <input class="btn btn-primary sm-2" style="margin-top: 1.5rem;" type="submit">
-                                                    </form>
-                                                </div>
-                                            <% } %>
+        <div style="height: 100rem;">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-12" >
+                        <div class="card">
+                            <div class="card-body">
+                                <div id="content">
+                                    <ul class="timeline">
+                                        <% stops.forEach((obj , idx, array)=>{ %>
+                                            <li class="event" data-date=<%=obj.idealTime %>>
+                                                <h4>
+                                                    <%= obj.name %>
+                                                </h4>
+                                                <h3>
+                                                    <%= obj.pincode %> <br>
+                                                        Time taken from previous stop : <%= obj.timeFromPrev %>Min <br>
+                                                            Returning At: <%= obj.idealReturnTime %>
+                                                </h3>
+                                                <% if(!(idx===array.length - 1)){ %>
+                                                    <div>
+                                                        <button class="add btn btn-primary sm-2">Add Stop</button>
+                                                        <% if(idx!==0 && idx != array.length -1){ %>
+                                                            <form class="removeStop" action="/removeStop" method="post">
+                                                                <input type="hidden" name="routeName" value=<%=routeName %> >
+                                                                <input type="hidden" name="pincode" value=<%=obj.pincode %>>
+                                                                <button class="btn btn-primary sm-2" type="submit">Remove This Stop</button>
+                                                            </form>
+                                                        <% } %>
+                                                    </div>
+                                                    <div class="addStop">
+                                                        <form action="/addStop" method="post">
+                                                            <input type="hidden" name="routeName" value=<%=routeName %>
+                                                            >
+                                                            <input type="hidden" name="index" value=<%=idx %>>
+                                                            <input type="hidden" name="prevTime" value=<%=obj.idealTime
+                                                                %>>
+                                                            <input type="hidden" name="prevOnDay" value=<%=obj.onDay %>>
+                                                            <label for="">Select stop</label>
+                                                            <select name="stop">
+                                                                <option value="Select">Select</option>
+                                                                <% places.forEach((ob)=>{ %>
+                                                                    <option value=<%=ob.pincode %> > <%=ob.name %>
+                                                                    </option>
+                                                                    <%}) %>
+                                                            </select>
+                                                            <br> <br>
+                                                            <label for="">Time from previous stop</label> <br>
+                                                            <input value="0" name="hrs" style="width: 5rem;"
+                                                                type="number"> Hrs &nbsp &nbsp<input value="0"
+                                                                name="min" style="width: 5rem;" type="number"> Min <br>
+                                                            <input class="btn btn-primary sm-2"
+                                                                style="margin-top: 1.5rem;" type="submit">
+                                                        </form>
+                                                    </div>
+                                                    <% } %>
+                                            </li>
+                                            <%})%>
+                                    </ul>
+                                </div>
 
-
-                                        </li>
-                                    <%})%>
-                                </ul>
                             </div>
                         </div>
+                        <form class="deleteForm" action="/deleteRoute" method="post">
+                            <input type="hidden" name="routeName" value=<%=routeName %>>
+                            <button class="btn btn-primary sm-2" type="submit">
+                                <i class="ic fa-solid fa-trash" "></i> Delete This Route
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>
-        </div> 
-    </div>
-    <script>
-        let elem=document.getElementsByClassName("add")
-        let arr=Array.from(elem)
-        arr.forEach(btn => {
-            btn.addEventListener("click" , ()=>{
-                btn.nextElementSibling.style.display="block"
-            })
-        });
 
-    </script>
+        </div>
 
-</main>
+        <script>
+            let elem = document.getElementsByClassName("add")
+            let arr = Array.from(elem)
+            arr.forEach(btn => {
+                btn.addEventListener("click", () => {
+                    btn.parentElement.nextElementSibling.style.display = "block"
+                })
+            });
+
+        </script>
+
+    </main>
 </body>
+
 </html>

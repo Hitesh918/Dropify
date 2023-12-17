@@ -1,6 +1,6 @@
 const express = require("express")
 const mongoose = require("mongoose")
-const { Stop, Route, Counter, Link, Order } = require("./schema"); // Adjust the path accordingly
+const { Stop, Route, Counter, Link, Order ,Info} = require("./schema"); // Adjust the path accordingly
 const final = require(__dirname + "/route.js")
 
 const app = express()
@@ -128,6 +128,13 @@ app.get('/newRoute', (req, res) => {
         })
 })
 
+app.get("/allStops" ,async (req,res)=>{
+    let arr=await Stop.find({})
+    res.render("allStops" , {
+        stops : arr
+    })
+})
+
 app.post("/newCourier", async (req, res) => {
 
     let cnt = await Counter.findOne({}).orderCount
@@ -141,7 +148,7 @@ app.post("/newCourier", async (req, res) => {
     })
 
     await x.save()
-    await final(parseInt(req.body.source), parseInt(req.body.destination))
+    await final(parseInt(req.body.source), parseInt(req.body.destination),cnt)
     res.redirect("/admin")
 })
 
@@ -295,6 +302,47 @@ app.post("/addStop", async (req, res) => {
         }
 
     }
+})
+
+async function removeStop(name , pincode ){
+    let route = await Route.find({routeName : name})
+    let courierIndex = route.stops.findIndex((ob) => ob.pincode == pincode);
+    let toBeAdded=route.stops[courierIndex].timeFromPrev
+    await Route.updateOne({ routeName: name }, {
+        $inc: {
+            [`stops.${courierIndex+1}.timeFromPrev`]: toBeAdded,
+        }
+    })
+    await Route.updateOne({ routeName: req.body.routeName }, {
+        $pull:{
+            stops : {
+                "pincode" : pincode
+            }
+        }
+    })
+    
+}
+
+app.post("/removeStop" , async (req,res)=>{
+    console.log(req.body)
+    // await removeStop(req.body.routeName , req.body.pincode)
+    res.redirect("/admin")
+})
+
+app.post("/deleteStop" , (req,res)=>{
+    console.log(req.body)
+})
+
+app.post("/deleteRoute" , async (req, res)=>{
+    console.log(req.body)
+    // let route = await Route.find({routeName : req.body.routeName})
+    // if(route.stops.length>2){
+    //     for(let i= 1 ; i<= route.stops.length -2 ; i++){
+    //         removeStop(req.body.routeName , route.stops[i].pincode)
+    //     }
+    // }
+    res.redirect("/admin")
+
 })
 
 app.listen(3000);

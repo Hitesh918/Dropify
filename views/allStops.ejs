@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link href="assets/css/theme.css" rel="stylesheet" />
+    <script src="https://kit.fontawesome.com/1611841c1c.js" crossorigin="anonymous"></script>
+    <style>
+        body {
+            padding: 3rem;
+        }
+
+        h1 {
+            margin-bottom: 3.5%;
+        }
+
+        .elem {
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22);
+            transition: transform .2s;
+            width: 40%;
+            height: 80%;
+            padding: 20px;
+            height: 6rem;
+            margin: auto;
+            margin-bottom: 10px;
+            position: relative;
+        }
+
+        .elem:hover {
+            -ms-transform: scale(1.5);
+            -webkit-transform: scale(1.5);
+            transform: scale(1.1);
+        }
+
+        form{
+            position: absolute;
+            top:2rem;
+            right:2rem;
+        }
+        form,i{
+            background-color: #fff;
+        }
+        i{
+            font-size: 1.5rem;
+        }
+        button{
+            border:none;
+            background-color: #fff;
+        }
+    </style>
+
+</head>
+
+<body>
+    <main>
+
+        <div style="height: 50rem;">
+            <h1>
+                All Stops
+            </h1>
+
+            <% stops.forEach((stop , i )=>{%>
+                <div class="elem">
+                    <h4>
+                        <%=stop.name %>
+                        <%if(stop.isJunction == true) { %>
+                            <i class="fa-solid fa-crosshairs" style="color: #f4930b;"></i>
+                        <%} %>
+                    </h4>
+                    <h6>
+                        <%=stop.pincode %>
+                    </h6>
+                    <form action="/deleteStop" method="post">
+                        <input type="hidden"  name="pincode"  value=<%= stop.pincode %>>
+                        <button type="submit">
+                            <i class="ic fa-solid fa-trash" style="color: #f4930b;"></i>
+                        </button>
+                    </form>
+                </div>
+            <% }) %>
+
+
+        </div>
+
+    </main>
+</body>
+
+</html>
