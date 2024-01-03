@@ -1,6 +1,6 @@
 const express = require("express")
 const mongoose = require("mongoose")
-const { Stop, Route, Counter, Link, Order ,Info} = require("./schema"); // Adjust the path accordingly
+const { Stop, Route, Counter, Link, Order, Info } = require("./schema"); // Adjust the path accordingly
 const final = require(__dirname + "/route.js")
 
 const app = express()
@@ -27,6 +27,55 @@ function dayCalc(timeString, startDay, minutesToAdd) {
     return dt.getUTCDay()
 }
 
+async function junctionFinder(stopCode, lhs) {
+    let flag = true
+    await Route.find({}).then(async (arr) => {
+        arr.forEach(async (route) => {
+            route.stops.forEach(async (stop) => {
+                if (stop.pincode == stopCode) {
+                    if (flag) {
+                        await Stop.findOneAndUpdate({ pincode: stopCode }, { isJunction: true })
+                        flag = false
+                    }
+                    await Link.findOneAndUpdate({ id: lhs }, {
+                        $addToSet: {
+                            links: {
+                                outId: route.id,
+                                pincode: stop.pincode
+                            }
+                        }
+                    })
+                    await Link.findOneAndUpdate({ id: route.id }, {
+                        $addToSet: {
+                            links: {
+                                outId: lhs,
+                                pincode: stop.pincode
+                            }
+                        }
+                    })
+                }
+            })
+        })
+    })
+}
+
+async function junctionUpdater(stopCode , routeId) {
+    let flag = true
+    arr = await Link.find({id : {$ne : routeId}})
+    for(x in arr){
+        for(obj in arr[x].links){
+            if(arr[x].links[obj].pincode == stopCode){
+
+                flag = false
+                break
+                return
+            }
+        }
+    }
+    if(flag){
+        await Stop.updateOne({"pincode" : stopCode} , {isJunction : false})
+    }
+}
 
 app.get("/", (req, res) => {
     res.render("index")
@@ -128,10 +177,10 @@ app.get('/newRoute', (req, res) => {
         })
 })
 
-app.get("/allStops" ,async (req,res)=>{
-    let arr=await Stop.find({})
-    res.render("allStops" , {
-        stops : arr
+app.get("/allStops", async (req, res) => {
+    let arr = await Stop.find({})
+    res.render("allStops", {
+        stops: arr
     })
 })
 
@@ -148,7 +197,7 @@ app.post("/newCourier", async (req, res) => {
     })
 
     await x.save()
-    await final(parseInt(req.body.source), parseInt(req.body.destination),cnt)
+    await final(parseInt(req.body.source), parseInt(req.body.destination), cnt)
     res.redirect("/admin")
 })
 
@@ -156,20 +205,25 @@ app.post("/newCourier", async (req, res) => {
 
 app.post("/newStop", async (req, res) => {
     console.log(req.body)
-    let arr = await Stop.find({ pincode: req.body.pincode })
-    let arr2 = await Stop.find({ name: req.body.name })
-    if (arr.length != 0 || arr2.length != 0) {
-        res.send(`<script> alert("stop with same name or pincode already exists") </script>`)
+    if (!req.body.pincode || !req.body.name ) {
+        res.send(`<script> alert("missing details") </script>`)
     }
-    else {
-        let x = new Stop({
-            pincode: req.body.pincode,
-            name: req.body.name,
-            isJunction: false
-        })
-        x.save()
-        await Counter.updateOne({}, { $inc: { stopCount: 1 } })
-        res.redirect("/admin")
+    else{
+        let arr = await Stop.find({ pincode: req.body.pincode })
+        let arr2 = await Stop.find({ name: req.body.name })
+        if (arr.length != 0 || arr2.length != 0) {
+            res.send(`<script> alert("stop with same name or pincode already exists") </script>`)
+        }
+        else {
+            let x = new Stop({
+                pincode: req.body.pincode,
+                name: req.body.name,
+                isJunction: false
+            })
+            x.save()
+            await Counter.updateOne({}, { $inc: { stopCount: 1 } })
+            res.redirect("/admin")
+        }
     }
 
 })
@@ -266,7 +320,7 @@ app.post("/addStop", async (req, res) => {
 
         let incTime = timeObj.stops[parseInt(req.body.index) + 1].timeFromPrev
         if (Tmin >= incTime) {
-
+            console.log(incTime , Tmin)
             res.send(`<script> alert("invalid timings") </script>`)
         }
         else {
@@ -304,45 +358,99 @@ app.post("/addStop", async (req, res) => {
     }
 })
 
-async function removeStop(name , pincode ){
-    let route = await Route.find({routeName : name})
+async function removeStop(name, pincode) {
+    let route = await Route.findOne({ routeName: name })
     let courierIndex = route.stops.findIndex((ob) => ob.pincode == pincode);
-    let toBeAdded=route.stops[courierIndex].timeFromPrev
+    let toBeAdded = route.stops[courierIndex].timeFromPrev
     await Route.updateOne({ routeName: name }, {
         $inc: {
-            [`stops.${courierIndex+1}.timeFromPrev`]: toBeAdded,
+            [`stops.${courierIndex + 1}.timeFromPrev`]: toBeAdded,
         }
     })
-    await Route.updateOne({ routeName: req.body.routeName }, {
-        $pull:{
-            stops : {
+    await Route.updateOne({ routeName: name }, {
+        $pull: {
+            stops: {
+                "pincode": pincode
+            }
+        }
+    })
+
+    let toBeBroken = await Link.findOne({id : route.id})
+    toBeBroken.links.forEach(async (obj)=>{
+        if(obj.pincode == pincode){
+            await Link.updateOne({id : obj.outId} , {
+                $pull : {
+                    links:{
+                        "pincode" : pincode,
+                        "outId" : route.id
+                    }
+                }
+            })
+        }
+    })
+
+    await Link.updateOne({id : route.id} , {
+        $pull : {
+            links:{
                 "pincode" : pincode
             }
         }
     })
-    
+
 }
 
-app.post("/removeStop" , async (req,res)=>{
-    console.log(req.body)
-    // await removeStop(req.body.routeName , req.body.pincode)
-    res.redirect("/admin")
+async function deleteRoute(name){
+    let route = await Route.findOne({routeName : name})
+    console.log(route)
+    let toBeBroken = await Link.findOne({id : route.id})
+    console.log("tobebroken")
+    console.log(toBeBroken)
+    toBeBroken.links.forEach(async (obj)=>{
+        await Link.updateOne({id : obj.outId} , {
+            $pull : {
+                links:{
+                    "pincode" : obj.pincode,
+                    "outId" : route.id
+                }
+            }
+        })
+        junctionUpdater(obj.pincode , route.id)
+    })
+    await Link.deleteOne({id : route.id})
+    await Route.deleteOne({routeName : name})
+}
+
+app.post("/removeStop", async (req, res) => {
+    let route = await Route.findOne({routeName : req.body.routeName})
+    await removeStop(req.body.routeName , parseInt(req.body.pincode))
+    await junctionUpdater(parseInt(req.body.pincode) , route.id)
+    res.redirect(`/viewRoute/${req.body.routeName}`)
 })
 
-app.post("/deleteStop" , (req,res)=>{
+app.post("/deleteStop", async(req, res) => {
     console.log(req.body)
+    let pincode = parseInt(req.body.pincode)
+    let routes = await Route.find()
+    routes.forEach(async (route)=>{
+        let index = route.stops.findIndex((ob) => ob.pincode == pincode);
+        if(index>0){
+            if(index == 0 || index ==route.stops.length-1 ){
+                await deleteRoute(route.routeName)
+            }
+            else{
+                // console.log("Sending")
+                // console.log(route.routeName , pincode)
+                await removeStop(route.routeName , pincode)
+            }
+        }
+    })
+    await Stop.deleteOne({"pincode" : pincode})
+    res.redirect("/allStops")
 })
 
-app.post("/deleteRoute" , async (req, res)=>{
-    console.log(req.body)
-    // let route = await Route.find({routeName : req.body.routeName})
-    // if(route.stops.length>2){
-    //     for(let i= 1 ; i<= route.stops.length -2 ; i++){
-    //         removeStop(req.body.routeName , route.stops[i].pincode)
-    //     }
-    // }
+app.post("/deleteRoute", async (req, res) => {
+    await deleteRoute(req.body.routeName)
     res.redirect("/admin")
-
 })
 
 app.listen(3000);
