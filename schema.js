@@ -1,7 +1,11 @@
 const mongoose = require('mongoose');
 
 const stopSchema=new mongoose.Schema({
-    pincode:Number , 
+    pincode:{
+        type:Number,
+        unique: true, 
+        required: true        
+    }, 
     name:String,
     isJunction:Boolean
 })
@@ -9,7 +13,11 @@ const stopSchema=new mongoose.Schema({
 const Stop=mongoose.model("stops" , stopSchema)
 
 const routeSchema=new mongoose.Schema({
-    id:Number,
+    id:{
+        type:Number,
+        unique: true, 
+        required: true        
+    },
     routeName:String ,
     stops:[{
     pincode : Number , 
@@ -25,13 +33,6 @@ const routeSchema=new mongoose.Schema({
 
 const Route=mongoose.model("routes" , routeSchema)
 
-const counterSchema=new mongoose.Schema({
-    orderCount:Number ,
-    routeCount:Number , 
-    stopCount:Number
-})
-
-const Counter=new mongoose.model("counters" , counterSchema)
 
 const linkSchema = new mongoose.Schema({
     id:Number ,
@@ -44,7 +45,11 @@ const linkSchema = new mongoose.Schema({
 const Link =new mongoose.model("links" , linkSchema)
 
 const orderSchema = new mongoose.Schema({
-    courierId  :Number , 
+    courierId  :{
+        type:Number,
+        unique: true, 
+        required: true        
+    }, 
     source : Number , 
     destination : Number , 
     pickedUpAt: Date
@@ -53,11 +58,19 @@ const orderSchema = new mongoose.Schema({
 const Order = new mongoose.model("orders" , orderSchema)
 
 const pathSchema = new mongoose.Schema({
-    courierId  :Number , 
+    courierId  :{
+        type:Number,
+        unique: true, 
+        required: true        
+    },
     path : [
         {
             pincode : Number,
-            time : Date ,
+            time : {
+                type: Date,
+                expires: '1m', 
+                default: Date.now
+              },
             waiting : Boolean
         }
     ]
@@ -69,7 +82,6 @@ const Info = new mongoose.model("details" , pathSchema )
 module.exports = {
     Stop,
     Route,
-    Counter,
     Link,
     Order,
     Info

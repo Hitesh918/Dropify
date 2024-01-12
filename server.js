@@ -1,9 +1,15 @@
 const express = require("express")
 const mongoose = require("mongoose")
-const { Stop, Route, Counter, Link, Order, Info } = require("./schema"); // Adjust the path accordingly
+const { Stop, Route, Link, Order, Info } = require("./schema"); // Adjust the path accordingly
 const final = require(__dirname + "/route.js")
 
 const app = express()
+const UUID = require('uuid-int');
+
+// number  0 <= id <=511
+const id = 0;
+
+const generator = UUID(id);
 
 app.set("view engine", "ejs")
 app.use(express.static(__dirname + '/public'))
@@ -59,12 +65,12 @@ async function junctionFinder(stopCode, lhs) {
     })
 }
 
-async function junctionUpdater(stopCode , routeId) {
+async function junctionUpdater(stopCode, routeId) {
     let flag = true
-    arr = await Link.find({id : {$ne : routeId}})
-    for(x in arr){
-        for(obj in arr[x].links){
-            if(arr[x].links[obj].pincode == stopCode){
+    arr = await Link.find({ id: { $ne: routeId } })
+    for (x in arr) {
+        for (obj in arr[x].links) {
+            if (arr[x].links[obj].pincode == stopCode) {
 
                 flag = false
                 break
@@ -72,8 +78,8 @@ async function junctionUpdater(stopCode , routeId) {
             }
         }
     }
-    if(flag){
-        await Stop.updateOne({"pincode" : stopCode} , {isJunction : false})
+    if (flag) {
+        await Stop.updateOne({ "pincode": stopCode }, { isJunction: false })
     }
 }
 
@@ -81,7 +87,17 @@ app.get("/", (req, res) => {
     res.render("index")
 })
 app.get("/track", (req, res) => {
-    res.render("track")
+    res.render("track" , {
+        result : false , 
+        present : -1 , 
+        next : -1
+    })
+})
+app.get("/scan", (req, res) => {
+    res.render("scan" , {
+        arr:[],
+        result : false
+    })
 })
 app.get("/admin", (req, res) => {
     res.render("admin")
@@ -186,8 +202,7 @@ app.get("/allStops", async (req, res) => {
 
 app.post("/newCourier", async (req, res) => {
 
-    let cnt = await Counter.findOne({}).orderCount
-
+    let cnt=generator.uuid();
     console.log(req.body)
     let x = new Order({
         courierId: cnt,
@@ -205,10 +220,10 @@ app.post("/newCourier", async (req, res) => {
 
 app.post("/newStop", async (req, res) => {
     console.log(req.body)
-    if (!req.body.pincode || !req.body.name ) {
+    if (!req.body.pincode || !req.body.name) {
         res.send(`<script> alert("missing details") </script>`)
     }
-    else{
+    else {
         let arr = await Stop.find({ pincode: req.body.pincode })
         let arr2 = await Stop.find({ name: req.body.name })
         if (arr.length != 0 || arr2.length != 0) {
@@ -221,7 +236,7 @@ app.post("/newStop", async (req, res) => {
                 isJunction: false
             })
             x.save()
-            await Counter.updateOne({}, { $inc: { stopCount: 1 } })
+            // await Counter.updateOne({}, { $inc: { stopCount: 1 } })
             res.redirect("/admin")
         }
     }
@@ -256,21 +271,21 @@ app.post('/newRoute', async (req, res) => {
         else {
             let starting = parseInt(req.body.start)
             let ending = parseInt(req.body.end)
-            let count = await Counter.findOne({})
+            let count = generator.uuid()
 
 
             let j = new Link({
-                id: count.routeCount + 1,
+                id: count,
                 links: []
             })
             await j.save()
 
-            await junctionFinder(starting, count.routeCount + 1)
-            await junctionFinder(ending, count.routeCount + 1)
+            await junctionFinder(starting, count)
+            await junctionFinder(ending, count)
 
 
             let x = new Route({
-                id: count.routeCount + 1,
+                id: count,
                 routeName: req.body.routeName.replace(" ", "-"),
                 stops: [{
                     pincode: starting,
@@ -292,7 +307,7 @@ app.post('/newRoute', async (req, res) => {
                 onEvery: parseInt(req.body.onEvery)
             })
             await x.save()
-            await Counter.updateOne({}, { $inc: { routeCount: 1 } })
+            // await Counter.updateOne({}, { $inc: { routeCount: 1 } })
 
             res.redirect("/admin")
         }
@@ -320,7 +335,7 @@ app.post("/addStop", async (req, res) => {
 
         let incTime = timeObj.stops[parseInt(req.body.index) + 1].timeFromPrev
         if (Tmin >= incTime) {
-            console.log(incTime , Tmin)
+            console.log(incTime, Tmin)
             res.send(`<script> alert("invalid timings") </script>`)
         }
         else {
@@ -358,6 +373,66 @@ app.post("/addStop", async (req, res) => {
     }
 })
 
+app.post("/track", async (req, res) => {
+    console.log(req.body)
+    let plan = await Info.findOne({ courierId: parseInt(req.body.id) })
+
+    let currentDate = new Date();
+    let currentTime = currentDate.getTime();
+    let timeZoneOffset = 5.5 * 60 * 60 * 1000;
+    let newTime = currentTime + timeZoneOffset;
+    newTime = Math.floor(newTime / 1000) * 1000;
+    let targetTime = new Date(newTime);
+    targetTime.setSeconds(0)
+
+    // let targetTime=new Date(Date.UTC(2024, 0, 4 , 15, 30));
+    // console.log(targetTime)
+
+    if(!plan){
+        res.send(`<script> alert("Courier not found") </script>`)
+    }
+    else{
+
+        const filteredArray = plan.path.filter(obj => obj.time > targetTime);
+        console.log(filteredArray)
+        let x = await Stop.findOne({pincode  :filteredArray[0].pincode})
+        let y = await Stop.findOne({pincode  :filteredArray[1].pincode})
+        res.render("track" , {
+            result : true , 
+            present : x.name , 
+            next : y.name
+        })
+    }
+
+})
+app.post("/scan", async (req, res) => {
+    console.log(req.body)
+    let plan = await Info.findOne({ courierId: parseInt(req.body.id) })
+
+    let currentDate = new Date();
+    let currentTime = currentDate.getTime();
+    let timeZoneOffset = 5.5 * 60 * 60 * 1000;
+    let newTime = currentTime + timeZoneOffset;
+    newTime = Math.floor(newTime / 1000) * 1000;
+    let targetTime = new Date(newTime);
+    targetTime.setSeconds(0)
+
+    // let targetTime=new Date(Date.UTC(2024, 0, 4 , 15, 30));
+    // console.log(targetTime)
+
+    if(!plan){
+        res.send(`<script> alert("Courier not found") </script>`)
+    }
+    else{
+        const filteredArray = plan.path.filter(obj => obj.time > targetTime);
+        res.render("scan" , {
+            result  :true , 
+            arr : filteredArray
+        })
+    }
+
+})
+
 async function removeStop(name, pincode) {
     let route = await Route.findOne({ routeName: name })
     let courierIndex = route.stops.findIndex((ob) => ob.pincode == pincode);
@@ -375,76 +450,76 @@ async function removeStop(name, pincode) {
         }
     })
 
-    let toBeBroken = await Link.findOne({id : route.id})
-    toBeBroken.links.forEach(async (obj)=>{
-        if(obj.pincode == pincode){
-            await Link.updateOne({id : obj.outId} , {
-                $pull : {
-                    links:{
-                        "pincode" : pincode,
-                        "outId" : route.id
+    let toBeBroken = await Link.findOne({ id: route.id })
+    toBeBroken.links.forEach(async (obj) => {
+        if (obj.pincode == pincode) {
+            await Link.updateOne({ id: obj.outId }, {
+                $pull: {
+                    links: {
+                        "pincode": pincode,
+                        "outId": route.id
                     }
                 }
             })
         }
     })
 
-    await Link.updateOne({id : route.id} , {
-        $pull : {
-            links:{
-                "pincode" : pincode
+    await Link.updateOne({ id: route.id }, {
+        $pull: {
+            links: {
+                "pincode": pincode
             }
         }
     })
 
 }
 
-async function deleteRoute(name){
-    let route = await Route.findOne({routeName : name})
+async function deleteRoute(name) {
+    let route = await Route.findOne({ routeName: name })
     console.log(route)
-    let toBeBroken = await Link.findOne({id : route.id})
+    let toBeBroken = await Link.findOne({ id: route.id })
     console.log("tobebroken")
     console.log(toBeBroken)
-    toBeBroken.links.forEach(async (obj)=>{
-        await Link.updateOne({id : obj.outId} , {
-            $pull : {
-                links:{
-                    "pincode" : obj.pincode,
-                    "outId" : route.id
+    toBeBroken.links.forEach(async (obj) => {
+        await Link.updateOne({ id: obj.outId }, {
+            $pull: {
+                links: {
+                    "pincode": obj.pincode,
+                    "outId": route.id
                 }
             }
         })
-        junctionUpdater(obj.pincode , route.id)
+        junctionUpdater(obj.pincode, route.id)
     })
-    await Link.deleteOne({id : route.id})
-    await Route.deleteOne({routeName : name})
+    await Link.deleteOne({ id: route.id })
+    await Route.deleteOne({ routeName: name })
 }
 
 app.post("/removeStop", async (req, res) => {
-    let route = await Route.findOne({routeName : req.body.routeName})
-    await removeStop(req.body.routeName , parseInt(req.body.pincode))
-    await junctionUpdater(parseInt(req.body.pincode) , route.id)
+    let route = await Route.findOne({ routeName: req.body.routeName })
+    await removeStop(req.body.routeName, parseInt(req.body.pincode))
+    await junctionUpdater(parseInt(req.body.pincode), route.id)
     res.redirect(`/viewRoute/${req.body.routeName}`)
 })
 
-app.post("/deleteStop", async(req, res) => {
+app.post("/deleteStop", async (req, res) => {
     console.log(req.body)
     let pincode = parseInt(req.body.pincode)
     let routes = await Route.find()
-    routes.forEach(async (route)=>{
+    routes.forEach(async (route) => {
         let index = route.stops.findIndex((ob) => ob.pincode == pincode);
-        if(index>0){
-            if(index == 0 || index ==route.stops.length-1 ){
+        if (index > 0) {
+            if (index == 0 || index == route.stops.length - 1) {
                 await deleteRoute(route.routeName)
             }
-            else{
+            else {
                 // console.log("Sending")
                 // console.log(route.routeName , pincode)
-                await removeStop(route.routeName , pincode)
+                await removeStop(route.routeName, pincode)
             }
         }
     })
-    await Stop.deleteOne({"pincode" : pincode})
+    await Stop.deleteOne({ "pincode": pincode })
     res.redirect("/allStops")
 })
 

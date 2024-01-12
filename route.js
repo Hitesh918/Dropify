@@ -1,6 +1,6 @@
 const express = require("express")
 const mongoose = require("mongoose")
-const { Stop, Route, Counter, Link, Order ,Info } = require("./schema"); // Adjust the path accordingly
+const { Stop, Route, Link, Order ,Info } = require("./schema"); 
 
 const app = express()
 
@@ -42,7 +42,7 @@ async function findAllRoutes(graph, sourceId, destinationId, visited = new Set()
 
 function minutesUntilDesiredTime(desiredTime, dayNumber, startTime) {
     const currentDateTime = new Date(startTime);
-    const currentDay = currentDateTime.getDay();
+    const currentDay = currentDateTime.getUTCDay();
     const currentTime = currentDateTime.getTime();
 
     const [desiredHours, desiredMinutes] = desiredTime.split(':').map(Number);
@@ -58,7 +58,7 @@ function minutesUntilDesiredTime(desiredTime, dayNumber, startTime) {
     desiredDateTime.setUTCHours(desiredHours, desiredMinutes, 0, 0);
 
     if (desiredDateTime <= currentDateTime) {
-        desiredDateTime.setDate(desiredDateTime.getDate() + 7);
+        desiredDateTime.setUTCDate(desiredDateTime.getUTCDate() + 7);
     }
 
     const timeDifference = desiredDateTime - currentTime;

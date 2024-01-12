@@ -15,18 +15,21 @@
             left: 30%;
             top: 20%;
             overflow: hidden;
-            width: 40%;
+            width: 50%;
             max-width: 100%;
-            height: 30%;
+            height: 40%;
             padding: 40px;
         }
-        h1{
+
+        h1 {
             margin-bottom: 10%;
         }
-        input[type=search]{
+
+        input[type=search] {
             width: 80%;
         }
-        .btn{
+
+        .btn {
             position: relative;
             bottom: 3px;
         }
@@ -44,9 +47,17 @@
                     Enter your courier ID
                 </h1>
                 <form action="/track" method="post">
-                    <input type="search"> 
-                    <input class="btn btn-primary " type="submit" >
+                    <input name="id" type="search" autocomplete="off">
+                    <input class="btn btn-primary " type="submit">
                 </form>
+                <% if(result){ %>
+                    <div>
+                            <h3>Courier reached <%= present %></h3>
+                            <h3>Now Heading towards  <%= next %></h3>
+                    </div>
+                <% } %>
+
+
             </div>
 
         </div>
