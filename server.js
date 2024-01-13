@@ -201,14 +201,20 @@ app.get("/allStops", async (req, res) => {
 })
 
 app.post("/newCourier", async (req, res) => {
-
+    let currentDate = new Date();
+    let currentTime = currentDate.getTime();
+    let timeZoneOffset = 5.5 * 60 * 60 * 1000;
+    let newTime = currentTime + timeZoneOffset;
+    newTime = Math.floor(newTime / 1000) * 1000;
+    let ans = new Date(newTime);
+    ans.setSeconds(0)
     let cnt=generator.uuid();
     console.log(req.body)
     let x = new Order({
         courierId: cnt,
         source: parseInt(req.body.source),
         destination: parseInt(req.body.destination),
-        pickedUpAt: new Date()
+        pickedUpAt: ans
     })
 
     await x.save()
@@ -385,18 +391,31 @@ app.post("/track", async (req, res) => {
     let targetTime = new Date(newTime);
     targetTime.setSeconds(0)
 
-    // let targetTime=new Date(Date.UTC(2024, 0, 4 , 15, 30));
+    // let targetTime=new Date(Date.UTC(2024, 0, 27 , 12, 30));
     // console.log(targetTime)
 
     if(!plan){
         res.send(`<script> alert("Courier not found") </script>`)
     }
+    else if(new Date(targetTime) > plan.path[plan.path.length -1].time){
+        res.send(`<script> alert("Courier has been delivered successfully") </script>`)
+    }
     else{
-
-        const filteredArray = plan.path.filter(obj => obj.time > targetTime);
-        console.log(filteredArray)
-        let x = await Stop.findOne({pincode  :filteredArray[0].pincode})
-        let y = await Stop.findOne({pincode  :filteredArray[1].pincode})
+        let a=0
+        let b=1
+        for(let i= 0 ; i<plan.path.length-1 ; i++){
+            const currentEntry = plan.path[i];
+            const nextEntry = plan.path[i + 1];     
+            if (new Date(targetTime) >= new Date(currentEntry.time) && new Date(targetTime) < new Date(nextEntry.time)) {
+                a=i;
+                b=i+1;
+                if(plan.path[i+1]){
+                    b++
+                }
+            }
+        }
+        let x = await Stop.findOne({pincode  :plan.path[a].pincode})
+        let y = await Stop.findOne({pincode  :plan.path[b].pincode})
         res.render("track" , {
             result : true , 
             present : x.name , 
@@ -417,11 +436,14 @@ app.post("/scan", async (req, res) => {
     let targetTime = new Date(newTime);
     targetTime.setSeconds(0)
 
-    // let targetTime=new Date(Date.UTC(2024, 0, 4 , 15, 30));
+    // let targetTime=new Date(Date.UTC(2024, 0, 26 , 11, 30));
     // console.log(targetTime)
 
     if(!plan){
         res.send(`<script> alert("Courier not found") </script>`)
+    }
+    else if(new Date(targetTime) > plan.path[plan.path.length -1].time){
+        res.send(`<script> alert("Courier has been delivered successfully") </script>`)
     }
     else{
         const filteredArray = plan.path.filter(obj => obj.time > targetTime);
