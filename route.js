@@ -179,7 +179,9 @@ let final = async (src, dest , id) => {
         courierId : id , 
         path : details
     })
-    await x.save()
+    if(details.length){
+        await x.save()
+    }
 
 }
 
